@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERMINAL ADMIN | ELCOMANDO</title>
+    <script src="firebase-app.js"></script>
+    <script src="firebase-database.js"></script>
+    <link rel="stylesheet" href="all.min.css">
+    <style>
+        @import url( https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Noto+Kufi+Arabic:wght@400;700&display=swap );
+        :root { --admin-red: #ff1a1a; --bg: #050505; --card: #0f0f0f; }
+        body { background: var(--bg); color: #fff; font-family:  Noto Kufi Arabic , sans-serif; margin: 0; padding: 20px; }
+        .admin-login { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .card { background: var(--card); border: 1px solid #222; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        input, select, textarea { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: #fff; margin-bottom: 10px; border-radius: 8px; }
+        .btn { background: var(--admin-red); color: #fff; border: none; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .user-item { border-bottom: 1px solid #222; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #222; }
+    </style>
+</head>
+<body>
+
+    <div id="admin-auth" class="admin-login">
+        <div class="card" style="width: 300px; text-align: center;">
+            <h2 style="font-family: Orbitron; color: var(--admin-red);">ADMIN ONLY</h2>
+            <input type="password" id="adminPass" placeholder="كلمة سر الإدارة">
+            <button class="btn" onclick="checkAdmin()">دخول 🔑</button>
+        </div>
+    </div>
+
+    <div id="admin-content" style="display: none;">
+        <h1>COMMANDER PANEL</h1>
+
+        <div class="card">
+            <h3>إرسال رسالة لكل المشتركين 📢</h3>
+            <textarea id="all-msg" placeholder="اكتب الرسالة هنا..."></textarea>
+            <button class="btn" onclick="sendToAll()">إرسال للجميع</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+            <div class="card" style="margin:0; text-align: center;">
+                <small>المشتركين</small>
+                <h2 id="u-count" style="color:var(--admin-red)">0</h2>
+            </div>
+            <div class="card" style="margin:0; text-align: center;">
+                <small>الضحايا الكلي</small>
+                <h2 id="h-count" style="color:var(--admin-red)">0</h2>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>إدارة المشتركين 👥</h3>
+            <div id="users-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://elcomando-68116-default-rtdb.firebaseio.com/" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 1. نظام حماية اللوحة (غير الباسورد من هنا)
+        function checkAdmin() {
+            const pass = document.getElementById( adminPass ).value;
+            if(pass === "CMD-2026") { // الباسورد بتاعك يا دكتور
+                document.getElementById( admin-auth ).style.display =  none ;
+                document.getElementById( admin-content ).style.display =  block ;
+                loadAdminData();
+            } else { alert("خطأ في كلمة سر الإدارة!"); }
+        }
+
+        function loadAdminData() {
+            db.ref( users ).on( value , snap => {
+                document.getElementById( u-count ).innerText = snap.numChildren();
+                const list = document.getElementById( users-list );
+                list.innerHTML = "";
+                snap.forEach(child => {
+                    const user = child.val();
+                    list.innerHTML += `
+                        <div class="user-item">
+                            <div>
+                                <b>${user.username}</b> <span class="badge">${user.plan ||  Free }</span>
+                            </div>
+                            <div style="display:flex; gap:5px;">
+                                <button onclick="manageUser( ${child.key} )" style="background:#00f2ff; border:none; border-radius:5px; padding:5px;"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteUser( ${child.key} )" style="background:red; border:none; border-radius:5px; padding:5px; color:white;"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>`;
+                });
+            });
+        }
+
+        // إرسال رسالة لكل المشتركين
+        function sendToAll() {
+            const msg = document.getElementById( all-msg ).value;
+            if(!msg) return;
+            db.ref( global_notifications ).set({
+                text: msg,
+                time: Date.now()
+            }).then(() => {
+                alert("تم إرسال الرسالة لجميع المشتركين ✅");
+                document.getElementById( all-msg ).value = "";
+            });
+        }
+
+        // تحكم فردي (فتح نافذة تحكم للمستخدم)
+        function manageUser(userId) {
+            const msg = prompt("اكتب رسالة خاصة لهذا المشترك:");
+            if(msg) {
+                db.ref( users/  + userId +  /private_msg ).set(msg);
+                alert("تم إرسال الرسالة الخاصة ✅");
+            }
+        }
+
+        function deleteUser(id) {
+            if(confirm("هل تريد طرد هذا المستخدم نهائياً؟")) {
+                db.ref( users/  + id).remove();
+            }
+        }
+    </script>
+</body>
+</html>
+
