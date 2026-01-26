@@ -82,18 +82,33 @@
         <p style="color:var(--primary); font-family:Orbitron; margin-top:15px;">WAITING...</p>
     </div>
 
-    <div id="acc-dialog" class="custom-dialog-overlay">
+    function showAccountDialog(user, pass) {
+    // بناء الديلوج برمجياً
+    const html = `
+    <div id="acc-box" class="custom-dialog-overlay" style="display:flex">
         <div class="custom-dialog-box">
-            <div class="dialog-icon">🎉</div>
-            <h3 style="color:var(--primary); font-family:Orbitron;">ACCOUNT READY</h3>
-            <p style="font-size:12px; color:#666;">اضغط على البيانات لنسخها</p>
-            <div onclick="copyInfo(this, 'Username')" id="copy-u" class="tool-card" style="margin:10px 0; border:1px dashed var(--primary)">
-                <small>User:</small> <b style="color:var(--primary)" id="res-u"></b>
+            <div class="dialog-icon">🎁</div>
+            <h3 style="color:var(--primary); font-family:Orbitron;">تم الإنشاء!</h3>
+            <p style="font-size:12px; color:#666;">اضغط على الخانة لنسخها</p>
+            
+            <div onclick="copyText('${user}', 'اليوزر')" class="tool-card" style="margin:10px 0; border:1px dashed var(--primary)">
+                <small>User:</small> <b style="color:var(--primary)">${user}</b>
             </div>
-            <div onclick="copyInfo(this, 'Password')" id="copy-p" class="tool-card" style="margin:10px 0; border:1px dashed var(--primary)">
-                <small>Pass:</small> <b style="color:var(--primary)" id="res-p"></b>
+            
+            <div onclick="copyText('${pass}', 'الباسورد')" class="tool-card" style="margin:10px 0; border:1px dashed var(--primary)">
+                <small>Pass:</small> <b style="color:var(--primary)">${pass}</b>
             </div>
-            <button class="btn" onclick="closeAccDialog()">دخول للنظام 🚀</button>
+
+            <button class="btn" onclick="document.getElementById('acc-box').remove(); toggleAuth(false);">دخول الآن ✅</button>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function copyText(txt, label) {
+    navigator.clipboard.writeText(txt);
+    alert("تم نسخ " + label + " بنجاح ✅");
+}
         </div>
     </div>
 
@@ -179,17 +194,48 @@
 
         // 1. نظام الدخول والباسورد وقفل الجهاز
         async function handleAuth(type) {
-            const loader = document.getElementById('page-loader');
-            if(type === 'signup') {
-                if(localStorage.getItem('device_locked')) return showAlert("تنبيه", "يسمح بحساب واحد فقط لكل هاتف 🚫");
-                const u = document.getElementById('regUser').value.trim();
-                const p = document.getElementById('regPass').value.trim();
-                if(!u || !p) return showAlert("نقص بيانات", "اكمل اليوزر والباسورد");
-                
-                loader.style.display = 'flex';
-                await db.ref('users/' + u).set({ password: p, username: u });
-                localStorage.setItem('device_locked', 'false');
-                loader.style.display = 'none';
+    const loader = document.getElementById('page-loader');
+    
+    if(type === 'signup') {
+        // تم تعطيل القفل حالياً للتجربة يا دكتور
+        // if(localStorage.getItem('device_locked')) return alert("جهازك مسجل بالفعل");
+
+        const u = document.getElementById('regUser').value.trim();
+        const p = document.getElementById('regPass').value.trim();
+        
+        if(!u || !p) { alert("أكمل البيانات"); return; }
+
+        loader.style.display = 'flex';
+        
+        // حفظ في الفايربيس
+        await db.ref('users/' + u).set({ password: p, username: u });
+
+        // سطر القفل معطل مؤقتاً بطلبك
+        // localStorage.setItem('device_locked', 'true');
+        
+        loader.style.display = 'none';
+        
+        // إظهار الديلوج اللي فيه بياناتك قابلة للنسخ
+        showAccountDialog(u, p);
+
+    } else {
+        // كود تسجيل الدخول
+        const u = document.getElementById('loginUser').value.trim();
+        const p = document.getElementById('loginPass').value.trim();
+        
+        loader.style.display = 'flex';
+        const snap = await db.ref('users/' + u).once('value');
+        
+        if(snap.exists() && snap.val().password === p) {
+            localStorage.setItem('logged_user', u);
+            enterSystem();
+        } else {
+            alert("اليوزر أو الباسورد غلط ❌");
+        }
+        loader.style.display = 'none';
+    }
+}
+
                 
                 document.getElementById('res-u').innerText = u;
                 document.getElementById('res-p').innerText = p;
@@ -281,4 +327,3 @@
     </script>
 </body>
 </html>
-
