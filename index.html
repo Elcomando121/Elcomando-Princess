@@ -82,33 +82,18 @@
         <p style="color:var(--primary); font-family:Orbitron; margin-top:15px;">WAITING...</p>
     </div>
 
-    function showAccountDialog(user, pass) {
-    // بناء الديلوج برمجياً
-    const html = `
-    <div id="acc-box" class="custom-dialog-overlay" style="display:flex">
+    <div id="acc-dialog" class="custom-dialog-overlay">
         <div class="custom-dialog-box">
-            <div class="dialog-icon">🎁</div>
-            <h3 style="color:var(--primary); font-family:Orbitron;">تم الإنشاء!</h3>
-            <p style="font-size:12px; color:#666;">اضغط على الخانة لنسخها</p>
-            
-            <div onclick="copyText('${user}', 'اليوزر')" class="tool-card" style="margin:10px 0; border:1px dashed var(--primary)">
-                <small>User:</small> <b style="color:var(--primary)">${user}</b>
+            <div class="dialog-icon">🎉</div>
+            <h3 style="color:var(--primary); font-family:Orbitron;">ACCOUNT READY</h3>
+            <p style="font-size:12px; color:#666;">اضغط على البيانات لنسخها</p>
+            <div onclick="copyInfo(this, 'Username')" id="copy-u" class="tool-card" style="margin:10px 0; border:1px dashed var(--primary)">
+                <small>User:</small> <b style="color:var(--primary)" id="res-u"></b>
             </div>
-            
-            <div onclick="copyText('${pass}', 'الباسورد')" class="tool-card" style="margin:10px 0; border:1px dashed var(--primary)">
-                <small>Pass:</small> <b style="color:var(--primary)">${pass}</b>
+            <div onclick="copyInfo(this, 'Password')" id="copy-p" class="tool-card" style="margin:10px 0; border:1px dashed var(--primary)">
+                <small>Pass:</small> <b style="color:var(--primary)" id="res-p"></b>
             </div>
-
-            <button class="btn" onclick="document.getElementById('acc-box').remove(); toggleAuth(false);">دخول الآن ✅</button>
-        </div>
-    </div>`;
-    document.body.insertAdjacentHTML('beforeend', html);
-}
-
-function copyText(txt, label) {
-    navigator.clipboard.writeText(txt);
-    alert("تم نسخ " + label + " بنجاح ✅");
-}
+            <button class="btn" onclick="closeAccDialog()">دخول للنظام 🚀</button>
         </div>
     </div>
 
