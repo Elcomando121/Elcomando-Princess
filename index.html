@@ -320,22 +320,38 @@
         }
 
         // التنقل والدوال العامة
-        function nav(id, title, emoji, el) {
-            if(el) {
-                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-                el.classList.add('active');
-            }
-            const loader = document.getElementById('page-loader');
-            document.getElementById('loader-icon').innerText = emoji;
-            loader.style.display = 'flex';
-            setTimeout(() => {
-                loader.style.display = 'none';
-                document.getElementById('title').innerText = title;
-                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-                const target = id === 'tool' ? 'tool-details-page' : 'tab' + id;
-                document.getElementById(target).classList.add('active');
-            }, 800);
+        async function nav(id, title, emoji, el) {
+    const user = localStorage.getItem('logged_user');
+    
+    // فحص الصلاحيات للأقسام الرئيسية
+    let sectionName = "";
+    if(id == 2) sectionName = "المنشئ";
+    if(id == 4) sectionName = "البروفايل";
+
+    if(sectionName !== "") {
+        const check = await db.ref('permissions/' + user + '/' + sectionName).once('value');
+        if(check.val() === false) {
+            return showAlert("وصول محدود 🚫", `قسم ${sectionName} مغلق في حسابك. تواصل مع الإدارة.`);
         }
+    }
+
+    // الكود الأصلي للتنقل
+    if(el) {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+    }
+    const loader = document.getElementById('page-loader');
+    document.getElementById('loader-icon').innerText = emoji;
+    loader.style.display = 'flex';
+    setTimeout(() => {
+        loader.style.display = 'none';
+        document.getElementById('title').innerText = title;
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        const target = id === 'tool' ? 'tool-details-page' : 'tab' + id;
+        document.getElementById(target).classList.add('active');
+    }, 800);
+}
+
 
         function enterSystem() {
             document.getElementById('auth-screen').style.display = 'none';
@@ -345,6 +361,17 @@
             listenToAdmin();
             startNotificationWatcher();
         }
+        
+        db.ref('global_notifications').on('value', snap => {
+    const bar = document.getElementById('admin-broadcast');
+    if(snap.exists()) {
+        document.getElementById('broadcast-text').innerText = snap.val().text;
+        bar.style.display = 'block';
+    } else {
+        bar.style.display = 'none'; // سيختفي الشريط فوراً عند الحذف من الأدمن
+    }
+});
+
 
         function showAlert(title, msg) {
             document.getElementById('alert-title').innerText = title;
